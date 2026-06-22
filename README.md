@@ -58,29 +58,33 @@ Menjawab **Ya → Ya → Ya** menelusuri: *Mau makanan berat?* → *Suka pedas?*
 
 ## Tampilan
 
+Tampilan utama = **diagram pohon di canvas**. Tiap node digambar sebagai kotak
+(🟦 biru = pertanyaan, 🟨 kuning = menu), cabang **kiri = Ya**, **kanan = Tidak**.
+Panel kanan menampilkan keterangan/legenda, atau alur **Pandu Pesan**.
+
 ```
-┌──────────────────────────────────────────────────────────────────────────┐
-│ Pemandu Pesan Menu — Pohon Keputusan (Binary Tree)                        │
-├──────────────────────────────────────────────────────────────────────────┤
-│ [🍽 Pandu Pesan] | [+ Tambah Cabang] [✎ Edit] [− Hapus] [Traversal] ...    │
-├──────────────────────────────────────────────────────────────────────────┤
-│ Pertanyaan / Menu (struktur pohon)  | Jawaban | Jenis      | Harga         │
-│ ▼ Mau makanan berat?                | ● akar  | Pertanyaan |               │
-│   ▼ Suka pedas?                     | ✓ ya    | Pertanyaan |               │
-│     ▼ Mau ayam?                     | ✓ ya    | Pertanyaan |               │
-│       • Ayam Geprek                 | ✓ ya    | Menu       | Rp 18.000     │
-│       • Mie Goreng Pedas            | ✗ tidak | Menu       | Rp 16.000     │
-│   ▼ Mau yang manis?                 | ✗ tidak | Pertanyaan |               │
-├──────────────────────────────────────────────────────────────────────────┤
-│ Menu: 8 | Pertanyaan: 7 | Tinggi pohon: 4 | File: menu.py                  │
-└──────────────────────────────────────────────────────────────────────────┘
+                 [ Mau makanan berat? ]           ┌─── Panel kanan ───┐
+                ya /            \ tidak            │ 🍽 Pandu Pesan    │
+         [ Suka pedas? ]     [ Mau manis? ]       │                   │
+         ya /     \ tidak       ...   ...         │ Mau makanan berat?│
+   [Mau ayam?]  [Berkuah?]                        │  [   ✓ Ya   ]     │
+   ya/  \tidak                                    │  [  ✗ Tidak ]     │
+ «Ayam   «Mie Goreng»   ← kotak kuning = menu     └───────────────────┘
+ Geprek»  (nama + harga)
+────────────────────────────────────────────────────────────────────────
+ Menu: 8 | Pertanyaan: 7 | Tinggi pohon: 4 | File: menu.py
 ```
+
+Klik node mana pun untuk **memilih** (Tambah/Edit/Hapus bekerja pada node
+terpilih). Saat **Pandu Pesan** berjalan, jalur jawaban **ter-sorot hijau** di
+pohon, jadi alurnya gampang diikuti.
 
 ## Fitur
 
 1. **🍽 Pandu Pesan** — fitur utama. Jawab pertanyaan **Ya/Tidak** langkah demi
    langkah; program menelusuri pohon dan menampilkan **menu rekomendasi** di
-   daun (nama, harga, deskripsi). Ada jejak jalur jawaban.
+   daun (nama, harga, deskripsi). **Jalur jawaban ter-sorot hijau langsung di
+   diagram pohon**, jadi prosesnya kelihatan jelas.
 2. **Tambah Cabang** — pilih node **Menu** (daun) → pecah jadi pertanyaan
    dengan 2 pilihan (menu lama dipertahankan, menu baru ditambah). Inilah cara
    pohon "tumbuh".
@@ -103,9 +107,9 @@ Menjawab **Ya → Ya → Ya** menelusuri: *Mau makanan berat?* → *Suka pedas?*
 
 ## Komponen Tkinter yang Dipakai
 
-- `ttk.Treeview` — display struktur pohon (kolom Jawaban / Jenis / Harga).
+- `tk.Canvas` — menggambar diagram pohon (kotak node + cabang ya/tidak), klik untuk memilih node.
 - `ttk.Combobox` — pilih cabang (ya/tidak) saat menambah cabang.
-- `tk.Toplevel` — dialog Tambah/Edit, window Pandu Pesan & Traversal.
+- `tk.Toplevel` — dialog Tambah/Edit & window Traversal.
 - `tkinter.messagebox` — konfirmasi, info, peringatan versi Tk.
 - `tk.StringVar` — binding widget ↔ state Python.
 
