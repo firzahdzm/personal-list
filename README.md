@@ -9,6 +9,11 @@ ketemu **menu** yang direkomendasikan. Tiap node pertanyaan punya **tepat 2
 cabang** (ya = kiri, tidak = kanan) — jadi struktur binary tree-nya bermakna
 & gampang dimengerti (tiap pertanyaan membelah pilihan jadi dua).
 
+Program **mulai dari kosong** dan dibangun lewat interaksi. Saat dibuka ada
+**layar Beranda** untuk memilih mode:
+- **🍽 Coba Pesan** — jalankan pemandu (jawab ya/tidak → menu rekomendasi).
+- **🔧 Kelola Menu** — bangun & edit pohon menu dari nol.
+
 ## Cara Menjalankan
 
 ```bash
@@ -31,7 +36,7 @@ Dua jenis node:
 - **Pertanyaan** (node internal) → punya 2 anak: `ya` (kiri) & `tidak` (kanan).
 - **Menu** (daun) → tidak punya anak; menyimpan `nama`, `harga`, `deskripsi`.
 
-Contoh pohon default:
+Contoh pohon yang bisa kamu bangun (program sendiri mulai kosong):
 
 ```
               Mau makanan berat?
@@ -51,49 +56,59 @@ Menjawab **Ya → Ya → Ya** menelusuri: *Mau makanan berat?* → *Suka pedas?*
 
 | File | Isi |
 |------|-----|
-| `main.py`    | **GUI Tkinter** — `PemanduApp`, fitur Pandu Pesan, dialog Tambah/Edit, guard Tk. |
+| `main.py`    | **GUI Tkinter** — `class App` (3 layar: Beranda / Kelola / Coba), diagram canvas, dialog, guard Tk. |
 | `tree.py`    | `class Node` (`ya`/`tidak`) & operasi pohon: traversal, `tinggi`, `hitung_menu`, `hitung_pertanyaan`, `jadikan_pertanyaan`, `hapus`. |
 | `storage.py` | Simpan/muat pohon ke `menu.py` sebagai nested dict + baca aman `ast.literal_eval`. |
-| `menu.py`    | **Auto-generated.** `menu = { ... }` (struktur pohon biner eksplisit ya/tidak). |
+| `menu.py`    | **Auto-generated.** `menu = None` saat kosong; jadi `menu = { ... }` (nested ya/tidak) setelah kamu membangun. |
 
 ## Tampilan
 
-Tampilan utama = **diagram pohon di canvas**. Tiap node digambar sebagai kotak
-(🟦 biru = pertanyaan, 🟨 kuning = menu), cabang **kiri = Ya**, **kanan = Tidak**.
-Panel kanan menampilkan keterangan/legenda, atau alur **Pandu Pesan**.
+Program punya **3 layar** dalam satu jendela.
+
+**① Beranda** — pilih mode begitu dibuka:
 
 ```
-                 [ Mau makanan berat? ]           ┌─── Panel kanan ───┐
-                ya /            \ tidak            │ 🍽 Pandu Pesan    │
-         [ Suka pedas? ]     [ Mau manis? ]       │                   │
-         ya /     \ tidak       ...   ...         │ Mau makanan berat?│
-   [Mau ayam?]  [Berkuah?]                        │  [   ✓ Ya   ]     │
-   ya/  \tidak                                    │  [  ✗ Tidak ]     │
- «Ayam   «Mie Goreng»   ← kotak kuning = menu     └───────────────────┘
- Geprek»  (nama + harga)
-────────────────────────────────────────────────────────────────────────
- Menu: 8 | Pertanyaan: 7 | Tinggi pohon: 4 | File: menu.py
+           🍴  Pemandu Pesan Menu
+   ┌───────────────┐   ┌───────────────┐
+   │ 🍽 Coba Pesan │   │ 🔧 Kelola Menu│
+   │   (pemandu)   │   │ (bangun pohon)│
+   └───────────────┘   └───────────────┘
 ```
 
-Klik node mana pun untuk **memilih** (Tambah/Edit/Hapus bekerja pada node
-terpilih). Saat **Pandu Pesan** berjalan, jalur jawaban **ter-sorot hijau** di
-pohon, jadi alurnya gampang diikuti.
+**② Kelola Menu** — bangun pohon (mulai kosong → **[➕ Buat Menu Pertama]**,
+lalu **Pecah jadi Pertanyaan**). Diagram di canvas: 🟦 pertanyaan, 🟨 menu,
+cabang **kiri = Ya / kanan = Tidak**. **Klik node** untuk memilih (Edit/Hapus/Pecah).
+
+**③ Coba Pesan** — diagram pohon + panel Q&A; jawab Ya/Tidak, **jalur ter-sorot
+hijau**, berhenti di menu rekomendasi:
+
+```
+   [ Suka pedas? ]           ┌─── Coba Pesan ───┐
+   ya /      \ tidak         │ Suka pedas?      │
+ «Ayam      «Nasi            │   [  ✓ Ya  ]     │
+ Geprek»    Goreng»          │   [ ✗ Tidak ]    │
+ (kuning = menu + harga)     └──────────────────┘
+```
 
 ## Fitur
 
-1. **🍽 Pandu Pesan** — fitur utama. Jawab pertanyaan **Ya/Tidak** langkah demi
-   langkah; program menelusuri pohon dan menampilkan **menu rekomendasi** di
-   daun (nama, harga, deskripsi). **Jalur jawaban ter-sorot hijau langsung di
-   diagram pohon**, jadi prosesnya kelihatan jelas.
-2. **Tambah Cabang** — pilih node **Menu** (daun) → pecah jadi pertanyaan
-   dengan 2 pilihan (menu lama dipertahankan, menu baru ditambah). Inilah cara
-   pohon "tumbuh".
+**Beranda** — pilih **Coba Pesan** atau **Kelola Menu**.
+
+**Mode Kelola Menu** (bangun dari kosong):
+1. **Buat Menu Pertama** — saat kosong, buat satu menu (nama, harga, deskripsi).
+2. **Pecah jadi Pertanyaan** — pilih node menu → jadikan pertanyaan dengan 2
+   pilihan (menu lama tetap, menu baru ditambah). Cara pohon "tumbuh".
 3. **Edit** — ubah teks pertanyaan, atau nama/harga/deskripsi menu.
-4. **Hapus** — hapus node; pertanyaan induknya **runtuh** & cabang saudaranya
-   naik menggantikan (analog hapus 1-anak di pohon).
-5. **Traversal** — preorder / inorder / postorder seluruh node.
-6. **Statistik** — jumlah menu, jumlah pertanyaan, total node, tinggi pohon.
-7. **Refresh** + **Auto-save** — perubahan langsung tersimpan ke `menu.py`.
+4. **Hapus** — node biasa: induk **runtuh**, saudaranya naik; menu terakhir →
+   pohon kembali kosong.
+5. **Traversal** (preorder/inorder/postorder) & **Statistik** (jumlah menu &
+   pertanyaan, tinggi pohon).
+
+**Mode Coba Pesan:**
+6. **Pandu Pesan** — jawab **Ya/Tidak** langkah demi langkah; **jalur ter-sorot
+   hijau** di diagram pohon; berhenti di **menu rekomendasi** (nama, harga, deskripsi).
+
+**Auto-save** — tiap perubahan langsung tersimpan ke `menu.py`.
 
 ## Operasi Pohon (`tree.py`)
 

@@ -1,32 +1,5 @@
 # File auto-generated oleh Pemandu Pesan Menu (pohon keputusan).
-# Struktur pohon biner: tiap node punya cabang 'ya' & 'tidak'.
+# Mulai KOSONG — bangun sendiri lewat mode "Kelola Menu".
+# Akan terisi otomatis (struktur pohon biner ya/tidak) begitu kamu menambah menu.
 
-menu = {   'teks': 'Suka pedas?',
-    'harga': None,
-    'deskripsi': '',
-    'ya': {   'teks': 'Mau ayam?',
-              'harga': None,
-              'deskripsi': '',
-              'ya': {   'teks': 'Ayam Geprek',
-                        'harga': 18000,
-                        'deskripsi': 'Ayam goreng tepung diulek dengan sambal bawang',
-                        'ya': None,
-                        'tidak': None},
-              'tidak': {   'teks': 'Mie Goreng Pedas',
-                           'harga': 16000,
-                           'deskripsi': 'Mie goreng level pedas + telur',
-                           'ya': None,
-                           'tidak': None}},
-    'tidak': {   'teks': 'Mau yang berkuah?',
-                 'harga': None,
-                 'deskripsi': '',
-                 'ya': {   'teks': 'Soto Ayam',
-                           'harga': 17000,
-                           'deskripsi': 'Soto kuah kuning + nasi',
-                           'ya': None,
-                           'tidak': None},
-                 'tidak': {   'teks': 'Nasi Goreng',
-                              'harga': 15000,
-                              'deskripsi': 'Nasi goreng spesial telur',
-                              'ya': None,
-                              'tidak': None}}}
+menu = None
