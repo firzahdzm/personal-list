@@ -33,7 +33,9 @@ Selain Tkinter, tidak perlu library lain (`ast` & `pprint` bawaan Python).
 ## Konsep Pohon Keputusan
 
 Dua jenis node:
-- **Pertanyaan** (node internal) → punya 2 anak: `ya` (kiri) & `tidak` (kanan).
+- **Pertanyaan** (node internal) → punya 2 anak (kiri & kanan). Label tiap
+  cabang bisa **di-custom** (mis. "Pedas" / "Manis"), default "Ya" / "Tidak".
+  Tetap 2 cabang → tetap binary tree.
 - **Menu** (daun) → tidak punya anak; menyimpan `nama`, `harga`, `deskripsi`.
 
 Contoh pohon yang bisa kamu bangun (program sendiri mulai kosong):
@@ -97,8 +99,10 @@ hijau**, berhenti di menu rekomendasi:
 **Mode Kelola Menu** (bangun dari kosong):
 1. **Buat Menu Pertama** — saat kosong, buat satu menu (nama, harga, deskripsi).
 2. **Pecah jadi Pertanyaan** — pilih node menu → jadikan pertanyaan dengan 2
-   pilihan (menu lama tetap, menu baru ditambah). Cara pohon "tumbuh".
-3. **Edit** — ubah teks pertanyaan, atau nama/harga/deskripsi menu.
+   pilihan + **label cabang custom** (menu lama tetap, menu baru ditambah).
+   Cara pohon "tumbuh".
+3. **Edit** — ubah teks pertanyaan & **label tiap cabangnya**, atau
+   nama/harga/deskripsi menu.
 4. **Hapus** — node biasa: induk **runtuh**, saudaranya naik; menu terakhir →
    pohon kembali kosong.
 5. **Traversal** (preorder/inorder/postorder) & **Statistik** (jumlah menu &

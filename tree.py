@@ -12,12 +12,15 @@ Pelanggan menjawab ya/tidak menelusuri pohon sampai ketemu daun (menu).
 
 
 class Node:
-    def __init__(self, teks, ya=None, tidak=None, harga=None, deskripsi=""):
+    def __init__(self, teks, ya=None, tidak=None, harga=None, deskripsi="",
+                 label_ya="Ya", label_tidak="Tidak"):
         self.teks = teks            # pertanyaan (internal) / nama menu (daun)
-        self.ya = ya                # anak kiri  (jawaban "ya")
-        self.tidak = tidak          # anak kanan (jawaban "tidak")
+        self.ya = ya                # anak kiri
+        self.tidak = tidak          # anak kanan
         self.harga = harga          # hanya untuk daun/menu (int); None utk pertanyaan
         self.deskripsi = deskripsi  # hanya untuk daun/menu
+        self.label_ya = label_ya        # teks jawaban menuju cabang kiri  (mis. "Pedas")
+        self.label_tidak = label_tidak  # teks jawaban menuju cabang kanan (mis. "Manis")
 
     def is_menu(self):
         """Daun = tidak punya anak = node menu."""
@@ -29,17 +32,21 @@ class Node:
 
 
 # ----------------------------------------------------------- edit struktur
-def jadikan_pertanyaan(node, pertanyaan, menu_ya, menu_tidak):
+def jadikan_pertanyaan(node, pertanyaan, menu_ya, menu_tidak,
+                       label_ya="Ya", label_tidak="Tidak"):
     """
     Ubah sebuah node MENU (daun) jadi node PERTANYAAN dengan 2 daun menu baru.
     Inilah cara pohon keputusan "tumbuh": satu pilihan dipecah jadi 2.
-    `menu_ya` & `menu_tidak` adalah Node menu.
+    `menu_ya` & `menu_tidak` adalah Node menu; `label_ya`/`label_tidak` teks
+    jawaban tiap cabang (bisa di-custom, mis. "Pedas"/"Manis").
     """
     node.teks = pertanyaan
     node.harga = None
     node.deskripsi = ""
     node.ya = menu_ya
     node.tidak = menu_tidak
+    node.label_ya = label_ya
+    node.label_tidak = label_tidak
 
 
 def hapus(akar, target):

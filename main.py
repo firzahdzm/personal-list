@@ -111,7 +111,7 @@ class TambahDialog:
 
         self.top = tk.Toplevel(parent)
         self.top.title("Pecah jadi Pertanyaan")
-        self.top.geometry("440x470")
+        self.top.geometry("460x590")
         self.top.configure(bg="#f3f3f3")
         self.top.transient(parent)
         self.top.grab_set()
@@ -128,10 +128,17 @@ class TambahDialog:
         self.tanya_var = tk.StringVar()
         ttk.Entry(form, textvariable=self.tanya_var).pack(fill=tk.X, pady=(2, 8))
 
+        ttk.Label(form, text="Label jawaban cabang KIRI:", font=("", 10, "bold")).pack(anchor=tk.W)
+        self.lab_ya_var = tk.StringVar(value="Ya")
+        ttk.Entry(form, textvariable=self.lab_ya_var).pack(fill=tk.X, pady=(2, 4))
+        ttk.Label(form, text="Label jawaban cabang KANAN:", font=("", 10, "bold")).pack(anchor=tk.W)
+        self.lab_tidak_var = tk.StringVar(value="Tidak")
+        ttk.Entry(form, textvariable=self.lab_tidak_var).pack(fill=tk.X, pady=(2, 8))
+
         ttk.Label(form, text=f"Menu lama '{node_menu.teks}' di cabang:",
                   font=("", 10, "bold")).pack(anchor=tk.W)
-        self.posisi_var = tk.StringVar(value="ya")
-        ttk.Combobox(form, textvariable=self.posisi_var, values=["ya", "tidak"],
+        self.posisi_var = tk.StringVar(value="kiri")
+        ttk.Combobox(form, textvariable=self.posisi_var, values=["kiri", "kanan"],
                      state="readonly").pack(fill=tk.X, pady=(2, 8))
 
         ttk.Separator(form, orient=tk.HORIZONTAL).pack(fill=tk.X, pady=4)
@@ -169,10 +176,12 @@ class TambahDialog:
             return
         lama = Node(self.node.teks, harga=self.node.harga, deskripsi=self.node.deskripsi)
         baru = Node(nama, harga=harga, deskripsi=self.desk_var.get().strip())
-        if self.posisi_var.get() == "ya":
-            jadikan_pertanyaan(self.node, tanya, lama, baru)
+        lab_ya = self.lab_ya_var.get().strip() or "Ya"
+        lab_tidak = self.lab_tidak_var.get().strip() or "Tidak"
+        if self.posisi_var.get() == "kiri":
+            jadikan_pertanyaan(self.node, tanya, lama, baru, lab_ya, lab_tidak)
         else:
-            jadikan_pertanyaan(self.node, tanya, baru, lama)
+            jadikan_pertanyaan(self.node, tanya, baru, lama, lab_ya, lab_tidak)
         self.berhasil = True
         self.top.destroy()
 
@@ -184,7 +193,7 @@ class EditDialog:
 
         self.top = tk.Toplevel(parent)
         self.top.title("Edit")
-        self.top.geometry("420x300")
+        self.top.geometry("420x360")
         self.top.configure(bg="#f3f3f3")
         self.top.transient(parent)
         self.top.grab_set()
@@ -200,6 +209,8 @@ class EditDialog:
 
         self.harga_var = tk.StringVar()
         self.desk_var = tk.StringVar()
+        self.lab_ya_var = tk.StringVar()
+        self.lab_tidak_var = tk.StringVar()
         if is_menu:
             ttk.Label(form, text="Harga (angka):", font=("", 10, "bold")).pack(anchor=tk.W)
             self.harga_var.set("" if node.harga is None else str(node.harga))
@@ -207,6 +218,13 @@ class EditDialog:
             ttk.Label(form, text="Deskripsi:", font=("", 10, "bold")).pack(anchor=tk.W)
             self.desk_var.set(node.deskripsi)
             ttk.Entry(form, textvariable=self.desk_var).pack(fill=tk.X, pady=(2, 8))
+        else:
+            ttk.Label(form, text="Label jawaban cabang KIRI:", font=("", 10, "bold")).pack(anchor=tk.W)
+            self.lab_ya_var.set(node.label_ya)
+            ttk.Entry(form, textvariable=self.lab_ya_var).pack(fill=tk.X, pady=(2, 8))
+            ttk.Label(form, text="Label jawaban cabang KANAN:", font=("", 10, "bold")).pack(anchor=tk.W)
+            self.lab_tidak_var.set(node.label_tidak)
+            ttk.Entry(form, textvariable=self.lab_tidak_var).pack(fill=tk.X, pady=(2, 8))
 
         bf = ttk.Frame(self.top, padding=12)
         bf.pack(fill=tk.X)
@@ -225,6 +243,9 @@ class EditDialog:
                 messagebox.showerror("Error", "Harga harus berupa angka.", parent=self.top)
                 return
             self.node.deskripsi = self.desk_var.get().strip()
+        else:
+            self.node.label_ya = self.lab_ya_var.get().strip() or "Ya"
+            self.node.label_tidak = self.lab_tidak_var.get().strip() or "Tidak"
         self.node.teks = teks
         self.berhasil = True
         self.top.destroy()
@@ -428,7 +449,8 @@ class App:
             if node.is_menu():
                 continue
             x0, y0 = px[node]
-            for child, label, warna in ((node.ya, "ya", C_PATH_B), (node.tidak, "tidak", "#999")):
+            for child, label, warna in ((node.ya, node.label_ya, C_PATH_B),
+                                        (node.tidak, node.label_tidak, "#999")):
                 x1, y1 = px[child]
                 c.create_line(x0, y0 + BH / 2, x1, y1 - BH / 2, fill="#bbbbbb", width=2)
                 c.create_text((x0 + x1) / 2, (y0 + y1) / 2 - 6, text=label,
@@ -528,9 +550,9 @@ class App:
         else:
             ttk.Label(self.panel, text=node.teks, font=("", 14, "bold"),
                       wraplength=240, justify=tk.LEFT).pack(anchor=tk.W, pady=(4, 12))
-            ttk.Button(self.panel, text="✓   Ya",
+            ttk.Button(self.panel, text=node.label_ya,
                        command=lambda: self._pandu_maju(node, node.ya)).pack(fill=tk.X, pady=4)
-            ttk.Button(self.panel, text="✗   Tidak",
+            ttk.Button(self.panel, text=node.label_tidak,
                        command=lambda: self._pandu_maju(node, node.tidak)).pack(fill=tk.X, pady=4)
             ttk.Label(self.panel, text="Jalur jawaban ter-sorot hijau di pohon →",
                       foreground="#888", wraplength=240).pack(anchor=tk.W, pady=(12, 0))

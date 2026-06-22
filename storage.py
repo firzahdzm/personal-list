@@ -18,23 +18,26 @@ from tree import Node
 
 
 def to_dict(node):
-    """Konversi Node (beserta keturunannya) jadi nested dict."""
+    """Konversi Node (beserta keturunannya) jadi nested dict.
+    Label cabang hanya ditulis untuk node pertanyaan (daun tidak butuh)."""
     if node is None:
         return None
-    return {
-        "teks": node.teks,
-        "harga": node.harga,
-        "deskripsi": node.deskripsi,
-        "ya": to_dict(node.ya),
-        "tidak": to_dict(node.tidak),
-    }
+    d = {"teks": node.teks, "harga": node.harga, "deskripsi": node.deskripsi}
+    if not node.is_menu():
+        d["label_ya"] = node.label_ya
+        d["label_tidak"] = node.label_tidak
+    d["ya"] = to_dict(node.ya)
+    d["tidak"] = to_dict(node.tidak)
+    return d
 
 
 def from_dict(d):
-    """Rebuild pohon dari nested dict. Return root Node atau None."""
+    """Rebuild pohon dari nested dict. Return root Node atau None.
+    Label cabang default "Ya"/"Tidak" bila file lama belum punya (backward-compatible)."""
     if d is None:
         return None
-    node = Node(d["teks"], harga=d.get("harga"), deskripsi=d.get("deskripsi", ""))
+    node = Node(d["teks"], harga=d.get("harga"), deskripsi=d.get("deskripsi", ""),
+                label_ya=d.get("label_ya", "Ya"), label_tidak=d.get("label_tidak", "Tidak"))
     node.ya = from_dict(d.get("ya"))
     node.tidak = from_dict(d.get("tidak"))
     return node
