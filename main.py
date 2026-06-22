@@ -471,12 +471,12 @@ class App:
         self.node_bbox[node] = (x1, y1, x2, y2)
         if node.is_menu():
             self.canvas.create_text(cx, cy - 8, text=node.teks, font=("", 10, "bold"),
-                                    width=BW - 16, justify="center")
+                                    width=BW - 16, justify="center", fill="#1a1a1a")
             self.canvas.create_text(cx, cy + 14, text=format_rupiah(node.harga),
                                     font=("", 9), fill="#a05a00")
         else:
             self.canvas.create_text(cx, cy, text=node.teks, font=("", 10),
-                                    width=BW - 16, justify="center")
+                                    width=BW - 16, justify="center", fill="#1a1a1a")
 
     def _on_click(self, event):
         x = self.canvas.canvasx(event.x)
