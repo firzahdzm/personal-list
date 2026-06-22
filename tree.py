@@ -1,102 +1,149 @@
 """
 tree.py
-Definisi class Node dan operasi-operasi tree (rekursif).
-N-ary tree: tiap node bisa punya banyak anak (children).
+Definisi class Node dan operasi Binary Search Tree (BST) — rekursif.
+
+Binary tree: tiap node maksimal punya 2 anak (kiri & kanan).
+Binary SEARCH tree: anak kiri selalu lebih kecil, anak kanan lebih besar
+dari node-nya (berdasar key = judul, case-insensitive). Sifat ini bikin
+pencarian jadi O(log n) dan kunjungan inorder otomatis terurut.
 """
 
 
 class Node:
-    def __init__(self, nama, data=None):
-        self.nama = nama
-        self.children = []
-        self.data = data if data else {}
+    def __init__(self, judul, tipe="", data=None):
+        self.judul = judul              # key BST (pembanding)
+        self.tipe = tipe                # Musik / Film / Game / Buku
+        self.data = data if data is not None else {}
+        self.kiri = None                # subpohon kiri  (judul lebih kecil)
+        self.kanan = None               # subpohon kanan (judul lebih besar)
 
     def __repr__(self):
-        return f"Node({self.nama!r}, anak={len(self.children)})"
+        return f"Node({self.judul!r}, tipe={self.tipe!r})"
 
 
-def cari_anak(node, nama):
-    """Cari anak langsung berdasarkan nama (case-insensitive). Return Node atau None."""
-    for child in node.children:
-        if child.nama.lower() == nama.lower():
-            return child
-    return None
+def _key(judul):
+    """Normalisasi key supaya urutan tidak terganggu besar/kecil huruf."""
+    return judul.strip().lower()
 
 
-def cari_rekursif(node, keyword, path=None):
+# ---------------------------------------------------------------- sisip
+def sisip(akar, judul, tipe="", data=None):
     """
-    DFS rekursif: cari semua node yang nama-nya mengandung keyword (case-insensitive).
-    Return list of (path, node).
+    Sisipkan node baru ke BST berdasar judul.
+    Return (akar_baru, berhasil). berhasil=False kalau judul sudah ada
+    (BST klasik menolak duplikat key).
     """
-    if path is None:
-        path = []
-    hasil = []
-    current_path = path + [node.nama]
-    if keyword.lower() in node.nama.lower() and path:
-        hasil.append((current_path, node))
-    for child in node.children:
-        hasil.extend(cari_rekursif(child, keyword, current_path))
-    return hasil
+    if akar is None:
+        return Node(judul, tipe, data), True
 
-
-def cari_untuk_hapus(node, target_nama, path=None):
-    """
-    Cari semua node dengan nama cocok (case-insensitive), kembalikan beserta parent-nya
-    agar bisa di-detach. Return list of (path, node, parent).
-    """
-    if path is None:
-        path = []
-    hasil = []
-    current_path = path + [node.nama]
-    for child in node.children:
-        child_path = current_path + [child.nama]
-        if child.nama.lower() == target_nama.lower():
-            hasil.append((child_path, child, node))
-        hasil.extend(cari_untuk_hapus(child, target_nama, current_path))
-    return hasil
-
-
-def tampilkan_tree(node, prefix="", is_last=True, is_root=True):
-    """Pretty-print tree dengan karakter └── ├── │ untuk visualisasi."""
-    if is_root:
-        print(node.nama)
+    k_baru, k_akar = _key(judul), _key(akar.judul)
+    if k_baru == k_akar:
+        return akar, False                      # duplikat → tolak
+    if k_baru < k_akar:
+        akar.kiri, ok = sisip(akar.kiri, judul, tipe, data)
     else:
-        connector = "└── " if is_last else "├── "
-        atribut = ""
-        if node.data:
-            atribut_str = ", ".join(f"{k}: {v}" for k, v in node.data.items())
-            atribut = f"   {{{atribut_str}}}"
-        print(f"{prefix}{connector}{node.nama}{atribut}")
-
-    if not is_root:
-        prefix += "    " if is_last else "│   "
-
-    n = len(node.children)
-    for i, child in enumerate(node.children):
-        last = (i == n - 1)
-        tampilkan_tree(child, prefix, last, is_root=False)
+        akar.kanan, ok = sisip(akar.kanan, judul, tipe, data)
+    return akar, ok
 
 
-def hitung_item(node):
-    """Hitung total leaf node yang punya data (= item, bukan kategori kosong)."""
-    if not node.children:
-        return 1 if node.data else 0
-    total = 0
-    for child in node.children:
-        total += hitung_item(child)
-    return total
+# ---------------------------------------------------------------- cari
+def cari(akar, judul, langkah=0):
+    """
+    Binary search: turun ke kiri/kanan mengikuti perbandingan key.
+    Return (node, langkah). node=None kalau tidak ketemu.
+    `langkah` = jumlah perbandingan (bukti efisiensi O(log n)).
+    """
+    if akar is None:
+        return None, langkah
+    langkah += 1
+    k, ka = _key(judul), _key(akar.judul)
+    if k == ka:
+        return akar, langkah
+    if k < ka:
+        return cari(akar.kiri, judul, langkah)
+    return cari(akar.kanan, judul, langkah)
 
 
-def kedalaman_max(node):
-    """Kedalaman maksimum tree (root = 0)."""
-    if not node.children:
+# ---------------------------------------------------------------- hapus
+def _node_min(akar):
+    """Node dengan key terkecil di subpohon (paling kiri)."""
+    while akar.kiri is not None:
+        akar = akar.kiri
+    return akar
+
+
+def hapus(akar, judul):
+    """
+    Hapus node berdasar judul. Return (akar_baru, berhasil).
+    Tiga kasus klasik BST:
+      1. tanpa anak / satu anak  -> sambung anaknya ke parent
+      2. dua anak                -> ganti dengan suksesor inorder
+                                    (node terkecil di subpohon kanan)
+    """
+    if akar is None:
+        return None, False
+
+    k, ka = _key(judul), _key(akar.judul)
+    if k < ka:
+        akar.kiri, ok = hapus(akar.kiri, judul)
+        return akar, ok
+    if k > ka:
+        akar.kanan, ok = hapus(akar.kanan, judul)
+        return akar, ok
+
+    # ketemu node-nya
+    if akar.kiri is None:
+        return akar.kanan, True            # 0/1 anak (kanan)
+    if akar.kanan is None:
+        return akar.kiri, True             # 1 anak (kiri)
+
+    # 2 anak: salin data suksesor, lalu hapus suksesor dari subpohon kanan
+    suksesor = _node_min(akar.kanan)
+    akar.judul, akar.tipe, akar.data = suksesor.judul, suksesor.tipe, suksesor.data
+    akar.kanan, _ = hapus(akar.kanan, suksesor.judul)
+    return akar, True
+
+
+# ---------------------------------------------------- kunjungan (traversal)
+def preorder(akar):
+    """Akar -> Kiri -> Kanan."""
+    if akar is None:
+        return []
+    return [akar] + preorder(akar.kiri) + preorder(akar.kanan)
+
+
+def inorder(akar):
+    """Kiri -> Akar -> Kanan. Di BST hasilnya TERURUT menaik."""
+    if akar is None:
+        return []
+    return inorder(akar.kiri) + [akar] + inorder(akar.kanan)
+
+
+def postorder(akar):
+    """Kiri -> Kanan -> Akar."""
+    if akar is None:
+        return []
+    return postorder(akar.kiri) + postorder(akar.kanan) + [akar]
+
+
+# ---------------------------------------------------------------- statistik
+def tinggi(akar):
+    """Tinggi pohon. Kosong = 0, satu node = 1."""
+    if akar is None:
         return 0
-    return 1 + max(kedalaman_max(c) for c in node.children)
+    return 1 + max(tinggi(akar.kiri), tinggi(akar.kanan))
 
 
-def hitung_per_tipe(root):
-    """Return dict {nama_tipe: jumlah_item}. Root.children = tipe-tipe (Musik, Film, dll)."""
+def hitung(akar):
+    """Jumlah total node."""
+    if akar is None:
+        return 0
+    return 1 + hitung(akar.kiri) + hitung(akar.kanan)
+
+
+def hitung_per_tipe(akar):
+    """Return dict {tipe: jumlah}."""
     hasil = {}
-    for tipe_node in root.children:
-        hasil[tipe_node.nama] = hitung_item(tipe_node)
+    for node in preorder(akar):
+        hasil[node.tipe] = hasil.get(node.tipe, 0) + 1
     return hasil
