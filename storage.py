@@ -1,9 +1,9 @@
 """
 storage.py
-Simpan/muat BST ke file Python (koleksi.py).
+Simpan/muat BST kontak ke file Python (kontak.py).
 
 Trik penting: BST disimpan sebagai list ber-urutan PREORDER. Saat dimuat,
-item disisipkan kembali satu per satu dengan urutan yang sama. Karena
+kontak disisipkan kembali satu per satu dengan urutan yang sama. Karena
 preorder memproses akar sebelum anak, hasil rekonstruksinya PERSIS sama
 dengan bentuk pohon semula (tidak berubah/menggepeng).
 
@@ -19,9 +19,9 @@ from tree import sisip, preorder
 
 
 def to_list(akar):
-    """Serialisasi BST -> list dict {judul, tipe, data} urutan preorder."""
+    """Serialisasi BST -> list dict {nama, nomor, kategori} urutan preorder."""
     return [
-        {"judul": n.judul, "tipe": n.tipe, "data": n.data}
+        {"nama": n.nama, "nomor": n.nomor, "kategori": n.kategori}
         for n in preorder(akar)
     ]
 
@@ -30,18 +30,18 @@ def from_list(items):
     """Rebuild BST dari list (disisipkan sesuai urutan list)."""
     akar = None
     for it in items:
-        akar, _ = sisip(akar, it["judul"], it.get("tipe", ""), it.get("data", {}))
+        akar, _ = sisip(akar, it["nama"], it.get("nomor", ""), it.get("kategori", ""))
     return akar
 
 
 def simpan(akar, path):
-    """Tulis BST ke file Python berisi `koleksi = [...]` (preorder)."""
+    """Tulis BST ke file Python berisi `kontak = [...]` (preorder)."""
     items = to_list(akar)
     formatted = pformat(items, indent=4, sort_dicts=False, width=100)
     with open(path, "w", encoding="utf-8") as f:
-        f.write("# File auto-generated oleh Katalog Koleksi Pribadi (BST).\n")
+        f.write("# File auto-generated oleh Buku Telepon (BST).\n")
         f.write("# Urutan list = PREORDER, jangan diacak agar bentuk pohon tetap.\n\n")
-        f.write(f"koleksi = {formatted}\n")
+        f.write(f"kontak = {formatted}\n")
 
 
 def muat(path):
@@ -51,7 +51,7 @@ def muat(path):
     with open(path, "r", encoding="utf-8") as f:
         src = f.read()
 
-    marker = "koleksi ="
+    marker = "kontak ="
     idx = src.find(marker)
     if idx == -1:
         return None
