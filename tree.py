@@ -1,151 +1,119 @@
 """
 tree.py
-Definisi class Node dan operasi Binary Search Tree (BST) — rekursif.
-Domain: Buku Telepon. Tiap node = 1 kontak, key = nama.
+Definisi class Node dan operasi Pohon Keputusan (binary decision tree).
 
-Binary tree: tiap node maksimal punya 2 anak (kiri & kanan).
-Binary SEARCH tree: anak kiri selalu lebih kecil, anak kanan lebih besar
-dari node-nya (berdasar key = nama, case-insensitive). Sifat ini bikin
-pencarian jadi O(log n) dan kunjungan inorder otomatis terurut A-Z.
+Pohon biner: tiap node maksimal 2 anak.
+Domain: pemandu pesan menu restoran.
+  - Node PERTANYAAN  -> punya 2 anak: `ya` (kiri) dan `tidak` (kanan).
+  - Node MENU (daun) -> tidak punya anak; menyimpan nama, harga, deskripsi.
+
+Pelanggan menjawab ya/tidak menelusuri pohon sampai ketemu daun (menu).
 """
 
 
 class Node:
-    def __init__(self, nama, nomor="", kategori=""):
-        self.nama = nama                # key BST (pembanding)
-        self.nomor = nomor              # nomor telepon
-        self.kategori = kategori        # Keluarga / Teman / Kerja / dll
-        self.kiri = None                # subpohon kiri  (nama lebih kecil)
-        self.kanan = None               # subpohon kanan (nama lebih besar)
+    def __init__(self, teks, ya=None, tidak=None, harga=None, deskripsi=""):
+        self.teks = teks            # pertanyaan (internal) / nama menu (daun)
+        self.ya = ya                # anak kiri  (jawaban "ya")
+        self.tidak = tidak          # anak kanan (jawaban "tidak")
+        self.harga = harga          # hanya untuk daun/menu (int); None utk pertanyaan
+        self.deskripsi = deskripsi  # hanya untuk daun/menu
+
+    def is_menu(self):
+        """Daun = tidak punya anak = node menu."""
+        return self.ya is None and self.tidak is None
 
     def __repr__(self):
-        return f"Node({self.nama!r}, {self.nomor!r})"
+        jenis = "Menu" if self.is_menu() else "Tanya"
+        return f"Node({jenis}: {self.teks!r})"
 
 
-def _key(nama):
-    """Normalisasi key supaya urutan tidak terganggu besar/kecil huruf."""
-    return nama.strip().lower()
-
-
-# ---------------------------------------------------------------- sisip
-def sisip(akar, nama, nomor="", kategori=""):
+# ----------------------------------------------------------- edit struktur
+def jadikan_pertanyaan(node, pertanyaan, menu_ya, menu_tidak):
     """
-    Sisipkan kontak baru ke BST berdasar nama.
-    Return (akar_baru, berhasil). berhasil=False kalau nama sudah ada
-    (BST klasik menolak duplikat key).
+    Ubah sebuah node MENU (daun) jadi node PERTANYAAN dengan 2 daun menu baru.
+    Inilah cara pohon keputusan "tumbuh": satu pilihan dipecah jadi 2.
+    `menu_ya` & `menu_tidak` adalah Node menu.
     """
-    if akar is None:
-        return Node(nama, nomor, kategori), True
-
-    k_baru, k_akar = _key(nama), _key(akar.nama)
-    if k_baru == k_akar:
-        return akar, False                      # duplikat → tolak
-    if k_baru < k_akar:
-        akar.kiri, ok = sisip(akar.kiri, nama, nomor, kategori)
-    else:
-        akar.kanan, ok = sisip(akar.kanan, nama, nomor, kategori)
-    return akar, ok
+    node.teks = pertanyaan
+    node.harga = None
+    node.deskripsi = ""
+    node.ya = menu_ya
+    node.tidak = menu_tidak
 
 
-# ---------------------------------------------------------------- cari
-def cari(akar, nama, langkah=0):
+def hapus(akar, target):
     """
-    Binary search: turun ke kiri/kanan mengikuti perbandingan key.
-    Return (node, langkah). node=None kalau tidak ketemu.
-    `langkah` = jumlah perbandingan (bukti efisiensi O(log n)).
+    Hapus node `target` (berdasar identitas). Return (akar_baru, berhasil).
+
+    Kalau target adalah anak sebuah pertanyaan, pertanyaan itu ikut runtuh
+    dan SAUDARA target naik menggantikannya (analog hapus 1-anak di BST).
+    Root tidak bisa dihapus lewat fungsi ini.
     """
-    if akar is None:
-        return None, langkah
-    langkah += 1
-    k, ka = _key(nama), _key(akar.nama)
-    if k == ka:
-        return akar, langkah
-    if k < ka:
-        return cari(akar.kiri, nama, langkah)
-    return cari(akar.kanan, nama, langkah)
+    if akar is target:
+        return akar, False
+    return _hapus(akar, target)
 
 
-# ---------------------------------------------------------------- hapus
-def _node_min(akar):
-    """Node dengan key terkecil di subpohon (paling kiri)."""
-    while akar.kiri is not None:
-        akar = akar.kiri
-    return akar
+def _hapus(node, target):
+    if node is None or node.is_menu():
+        return node, False
+    if node.ya is target:
+        return node.tidak, True        # runtuh: saudara "tidak" naik
+    if node.tidak is target:
+        return node.ya, True           # runtuh: saudara "ya" naik
+    baru, ok = _hapus(node.ya, target)
+    if ok:
+        node.ya = baru
+        return node, True
+    baru, ok = _hapus(node.tidak, target)
+    if ok:
+        node.tidak = baru
+        return node, True
+    return node, False
 
 
-def hapus(akar, nama):
-    """
-    Hapus kontak berdasar nama. Return (akar_baru, berhasil).
-    Tiga kasus klasik BST:
-      1. tanpa anak / satu anak  -> sambung anaknya ke parent
-      2. dua anak                -> ganti dengan suksesor inorder
-                                    (node terkecil di subpohon kanan)
-    """
-    if akar is None:
-        return None, False
-
-    k, ka = _key(nama), _key(akar.nama)
-    if k < ka:
-        akar.kiri, ok = hapus(akar.kiri, nama)
-        return akar, ok
-    if k > ka:
-        akar.kanan, ok = hapus(akar.kanan, nama)
-        return akar, ok
-
-    # ketemu node-nya
-    if akar.kiri is None:
-        return akar.kanan, True            # 0/1 anak (kanan)
-    if akar.kanan is None:
-        return akar.kiri, True             # 1 anak (kiri)
-
-    # 2 anak: salin data suksesor, lalu hapus suksesor dari subpohon kanan
-    suksesor = _node_min(akar.kanan)
-    akar.nama, akar.nomor, akar.kategori = suksesor.nama, suksesor.nomor, suksesor.kategori
-    akar.kanan, _ = hapus(akar.kanan, suksesor.nama)
-    return akar, True
-
-
-# ---------------------------------------------------- kunjungan (traversal)
-def preorder(akar):
-    """Akar -> Kiri -> Kanan."""
-    if akar is None:
+# ----------------------------------------------------- kunjungan (traversal)
+def preorder(node):
+    """Akar -> Kiri(ya) -> Kanan(tidak)."""
+    if node is None:
         return []
-    return [akar] + preorder(akar.kiri) + preorder(akar.kanan)
+    return [node] + preorder(node.ya) + preorder(node.tidak)
 
 
-def inorder(akar):
-    """Kiri -> Akar -> Kanan. Di BST hasilnya TERURUT A-Z."""
-    if akar is None:
+def inorder(node):
+    """Kiri(ya) -> Akar -> Kanan(tidak)."""
+    if node is None:
         return []
-    return inorder(akar.kiri) + [akar] + inorder(akar.kanan)
+    return inorder(node.ya) + [node] + inorder(node.tidak)
 
 
-def postorder(akar):
-    """Kiri -> Kanan -> Akar."""
-    if akar is None:
+def postorder(node):
+    """Kiri(ya) -> Kanan(tidak) -> Akar."""
+    if node is None:
         return []
-    return postorder(akar.kiri) + postorder(akar.kanan) + [akar]
+    return postorder(node.ya) + postorder(node.tidak) + [node]
 
 
 # ---------------------------------------------------------------- statistik
-def tinggi(akar):
+def tinggi(node):
     """Tinggi pohon. Kosong = 0, satu node = 1."""
-    if akar is None:
+    if node is None:
         return 0
-    return 1 + max(tinggi(akar.kiri), tinggi(akar.kanan))
+    return 1 + max(tinggi(node.ya), tinggi(node.tidak))
 
 
-def hitung(akar):
-    """Jumlah total node (kontak)."""
-    if akar is None:
+def hitung_menu(node):
+    """Jumlah daun (menu)."""
+    if node is None:
         return 0
-    return 1 + hitung(akar.kiri) + hitung(akar.kanan)
+    if node.is_menu():
+        return 1
+    return hitung_menu(node.ya) + hitung_menu(node.tidak)
 
 
-def hitung_per_kategori(akar):
-    """Return dict {kategori: jumlah}."""
-    hasil = {}
-    for node in preorder(akar):
-        kat = node.kategori or "(tanpa kategori)"
-        hasil[kat] = hasil.get(kat, 0) + 1
-    return hasil
+def hitung_pertanyaan(node):
+    """Jumlah node internal (pertanyaan)."""
+    if node is None or node.is_menu():
+        return 0
+    return 1 + hitung_pertanyaan(node.ya) + hitung_pertanyaan(node.tidak)

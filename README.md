@@ -1,16 +1,13 @@
-# Buku Telepon — Tugas Akhir Struktur Data (GUI)
+# Pemandu Pesan Menu — Tugas Akhir Struktur Data (GUI)
 
-Program Python berbasis **GUI (Tkinter)** untuk mengelola buku telepon
-menggunakan struktur data **Binary Search Tree (BST)**.
+Program Python berbasis **GUI (Tkinter)** untuk membantu pelanggan restoran
+memilih menu, menggunakan struktur data **Pohon Keputusan (binary decision
+tree)**.
 
-Tiap kontak disimpan sebagai satu **node** pohon biner dengan **key = nama**.
-Karena setiap node maksimal punya **2 anak** (kiri & kanan) dan mengikuti
-aturan urut, program bisa melakukan **pencarian cepat (binary search,
-O(log n))** dan **kunjungan preorder / inorder / postorder**.
-
-> Buku telepon dipilih karena **cocok** dengan binary tree: data flat dengan
-> satu key (nama) untuk diurutkan & dicari — beda dengan katalog/playlist yang
-> hierarkis (tidak pas untuk binary tree).
+Pelanggan menjawab pertanyaan **ya / tidak** dan menelusuri pohon biner sampai
+ketemu **menu** yang direkomendasikan. Tiap node pertanyaan punya **tepat 2
+cabang** (ya = kiri, tidak = kanan) — jadi struktur binary tree-nya bermakna
+& gampang dimengerti (tiap pertanyaan membelah pilihan jadi dua).
 
 ## Cara Menjalankan
 
@@ -19,120 +16,104 @@ O(log n))** dan **kunjungan preorder / inorder / postorder**.
 ```
 
 > **PENTING — interpreter di macOS:**
-> Pakai Python dari **Homebrew** (`/opt/homebrew/bin/python3`) yang memuat
-> **Tcl/Tk 9.0**. **JANGAN pakai `/usr/bin/python3`** bawaan macOS — itu
-> memakai **Tk 8.5** yang **rusak rendering** di macOS versi baru (jendela
-> tampil **hitam/blank**).
->
-> Program sudah punya **guard**: kalau ke-detect Tk < 8.6, muncul peringatan
-> berisi saran interpreter yang benar.
+> Pakai Python dari **Homebrew** (`/opt/homebrew/bin/python3`, Tk 9.0).
+> **JANGAN `/usr/bin/python3`** (Tk 8.5) — rendering-nya rusak di macOS baru
+> (jendela tampil **hitam/blank**). Program sudah punya **guard** yang
+> memperingatkan kalau Tk < 8.6.
 >
 > Cek versi Tk: `python3 -c "import tkinter; print(tkinter.TkVersion)"`
 
-Selain Tkinter (sudah ada di Homebrew python + `python-tk`), tidak perlu
-install library lain — `ast` dan `pprint` bagian dari standar Python.
+Selain Tkinter, tidak perlu library lain (`ast` & `pprint` bawaan Python).
 
-## Konsep Binary Search Tree
+## Konsep Pohon Keputusan
 
-- **Key** tiap node = `nama` (dibandingkan case-insensitive).
-- **Aturan urut:** anak `kiri` selalu lebih kecil, anak `kanan` lebih besar.
-- Akibatnya: **kunjungan inorder otomatis menghasilkan daftar nama A-Z**, dan
-  pencarian cukup turun ke satu sisi tiap langkah (≈ `log₂ n` perbandingan).
+Dua jenis node:
+- **Pertanyaan** (node internal) → punya 2 anak: `ya` (kiri) & `tidak` (kanan).
+- **Menu** (daun) → tidak punya anak; menyimpan `nama`, `harga`, `deskripsi`.
 
-Contoh bentuk pohon (ilustrasi sebagian):
+Contoh pohon default:
 
 ```
-            Hendra
-           /      \
-        Budi       Rudi
-        /  \        /
-     Andi  Citra  Maya
+              Mau makanan berat?
+              /ya               \tidak
+        Suka pedas?            Mau yang manis?
+        /ya      \tidak         /ya         \tidak
+   Mau ayam?   Berkuah?   Mau dingin?   Berkafein?
+    /ya \tidak  /ya \tidak  /ya \tidak    /ya  \tidak
+  Ayam  Mie   Soto  Nasi  Es    Coklat  Kopi  Air
+  Geprek Pedas Ayam Goreng Krim  Panas  Hitam Mineral
 ```
 
-`Andi < Budi < Citra < Hendra < Maya < Rudi` → inorder mengunjunginya tepat
-dalam urutan itu.
+Menjawab **Ya → Ya → Ya** menelusuri: *Mau makanan berat?* → *Suka pedas?* →
+*Mau ayam?* → **Ayam Geprek**.
 
 ## Struktur File
 
 | File | Isi |
 |------|-----|
-| `main.py`    | **GUI Tkinter** — class `KatalogApp` + `TambahDialog`, render struktur kiri/kanan, guard versi Tk. |
-| `tree.py`    | `class Node` (`kiri`/`kanan`) & operasi BST rekursif: `sisip`, `cari`, `hapus`, `preorder`, `inorder`, `postorder`, `tinggi`, `hitung`. |
-| `storage.py` | Simpan/muat BST ke `kontak.py`. Serialisasi urutan **preorder** + baca aman pakai `ast.literal_eval`. |
-| `kontak.py`  | **Auto-generated.** Berisi `kontak = [ {nama, nomor, kategori}, … ]` (list literal Python, urutan preorder). |
+| `main.py`    | **GUI Tkinter** — `PemanduApp`, fitur Pandu Pesan, dialog Tambah/Edit, guard Tk. |
+| `tree.py`    | `class Node` (`ya`/`tidak`) & operasi pohon: traversal, `tinggi`, `hitung_menu`, `hitung_pertanyaan`, `jadikan_pertanyaan`, `hapus`. |
+| `storage.py` | Simpan/muat pohon ke `menu.py` sebagai nested dict + baca aman `ast.literal_eval`. |
+| `menu.py`    | **Auto-generated.** `menu = { ... }` (struktur pohon biner eksplisit ya/tidak). |
 
 ## Tampilan
 
-GUI menampilkan **struktur pohon biner** (indentasi = parent→anak, kolom
-*Posisi* menandai anak kiri/kanan):
-
 ```
-┌──────────────────────────────────────────────────────────────────────┐
-│ Buku Telepon — Binary Search Tree                                     │
-├──────────────────────────────────────────────────────────────────────┤
-│ [+ Tambah] [− Hapus] [Cari…] [Traversal] [Statistik] [↻ Refresh]      │
-├──────────────────────────────────────────────────────────────────────┤
-│ Nama (struktur pohon)  | Posisi  | Nomor          | Kategori          │
-│ ▼ Hendra               | ● akar  | 0812-1000-2000 | Kerja             │
-│   ▼ Budi               | ↙ kiri  | 0856-1111-2222 | Teman             │
-│     • Andi             | ↙ kiri  | 0815-2222-3333 | Teman             │
-│     • Citra            | ↘ kanan | 0858-4444-5555 | Teman             │
-│   ▼ Rudi               | ↘ kanan | 0813-3333-4444 | Kerja             │
-│     • Maya             | ↙ kiri  | 0812-9999-0000 | Kerja             │
-├──────────────────────────────────────────────────────────────────────┤
-│ Total: 18 kontak | Tinggi pohon: 6 | File: kontak.py                  │
-└──────────────────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────────────────┐
+│ Pemandu Pesan Menu — Pohon Keputusan (Binary Tree)                        │
+├──────────────────────────────────────────────────────────────────────────┤
+│ [🍽 Pandu Pesan] | [+ Tambah Cabang] [✎ Edit] [− Hapus] [Traversal] ...    │
+├──────────────────────────────────────────────────────────────────────────┤
+│ Pertanyaan / Menu (struktur pohon)  | Jawaban | Jenis      | Harga         │
+│ ▼ Mau makanan berat?                | ● akar  | Pertanyaan |               │
+│   ▼ Suka pedas?                     | ✓ ya    | Pertanyaan |               │
+│     ▼ Mau ayam?                     | ✓ ya    | Pertanyaan |               │
+│       • Ayam Geprek                 | ✓ ya    | Menu       | Rp 18.000     │
+│       • Mie Goreng Pedas            | ✗ tidak | Menu       | Rp 16.000     │
+│   ▼ Mau yang manis?                 | ✗ tidak | Pertanyaan |               │
+├──────────────────────────────────────────────────────────────────────────┤
+│ Menu: 8 | Pertanyaan: 7 | Tinggi pohon: 4 | File: menu.py                  │
+└──────────────────────────────────────────────────────────────────────────┘
 ```
 
 ## Fitur
 
-1. **Tambah** — dialog modal: isi Nama (jadi key BST), Nomor, Kategori
-   (combobox bisa dipilih atau diketik). Nama duplikat ditolak (key BST unik).
-2. **Hapus** — pilih kontak → tombol Hapus (atau tekan `Delete`) → konfirmasi.
-   Mengikuti **3 kasus penghapusan BST**: node tanpa anak / satu anak langsung
-   disambung; node dua anak diganti **suksesor inorder** (node terkecil di
-   subpohon kanan).
-3. **Cari** — input nama → **binary search**. Menampilkan kontak yang ketemu
-   beserta **jumlah langkah perbandingan** (bukti efisiensi O(log n)).
-   Case-insensitive.
-4. **Traversal** — window berisi tiga kunjungan: **preorder** (Akar→Kiri→Kanan),
-   **inorder** (Kiri→Akar→Kanan, hasilnya terurut A-Z), **postorder**
-   (Kiri→Kanan→Akar).
-5. **Statistik** — total kontak, **tinggi pohon**, jumlah per kategori, dan
-   kategori terbanyak.
-6. **Refresh** — render ulang pohon (berguna kalau `kontak.py` diedit manual).
-7. **Auto-save** — setiap perubahan langsung tersimpan ke `kontak.py`.
+1. **🍽 Pandu Pesan** — fitur utama. Jawab pertanyaan **Ya/Tidak** langkah demi
+   langkah; program menelusuri pohon dan menampilkan **menu rekomendasi** di
+   daun (nama, harga, deskripsi). Ada jejak jalur jawaban.
+2. **Tambah Cabang** — pilih node **Menu** (daun) → pecah jadi pertanyaan
+   dengan 2 pilihan (menu lama dipertahankan, menu baru ditambah). Inilah cara
+   pohon "tumbuh".
+3. **Edit** — ubah teks pertanyaan, atau nama/harga/deskripsi menu.
+4. **Hapus** — hapus node; pertanyaan induknya **runtuh** & cabang saudaranya
+   naik menggantikan (analog hapus 1-anak di pohon).
+5. **Traversal** — preorder / inorder / postorder seluruh node.
+6. **Statistik** — jumlah menu, jumlah pertanyaan, total node, tinggi pohon.
+7. **Refresh** + **Auto-save** — perubahan langsung tersimpan ke `menu.py`.
 
-## Operasi BST (`tree.py`)
+## Operasi Pohon (`tree.py`)
 
 | Fungsi | Kegunaan |
 |--------|----------|
-| `sisip(akar, nama, nomor, kategori)` | Sisip kontak sesuai aturan urut; tolak duplikat. |
-| `cari(akar, nama)` | Binary search; return `(node, jumlah_langkah)`. |
-| `hapus(akar, nama)` | Hapus kontak (3 kasus klasik BST). |
+| `jadikan_pertanyaan(node, tanya, menu_ya, menu_tidak)` | Pecah daun menu jadi pertanyaan + 2 daun. |
+| `hapus(akar, target)` | Hapus node; induk runtuh, saudara naik (return `(akar, ok)`). |
 | `preorder / inorder / postorder` | Tiga jenis kunjungan pohon biner. |
-| `tinggi(akar)` | Tinggi pohon (kosong = 0, satu node = 1). |
-| `hitung(akar)` | Jumlah total kontak. |
-| `hitung_per_kategori(akar)` | Jumlah kontak per kategori (untuk statistik). |
+| `tinggi(node)` | Tinggi pohon (kosong = 0). |
+| `hitung_menu(node)` / `hitung_pertanyaan(node)` | Jumlah daun / node internal. |
 
 ## Komponen Tkinter yang Dipakai
 
-- `ttk.Treeview` — display struktur pohon biner (kolom Posisi / Nomor / Kategori).
-- `ttk.Combobox` — pilih/ketik kategori.
-- `tk.Toplevel` — dialog modal `TambahDialog` & window Traversal.
-- `tkinter.messagebox` — konfirmasi hapus, info statistik & pencarian, peringatan versi Tk.
-- `tkinter.simpledialog` — prompt input nama pencarian.
-- `tk.StringVar` — binding antara widget dan state Python.
+- `ttk.Treeview` — display struktur pohon (kolom Jawaban / Jenis / Harga).
+- `ttk.Combobox` — pilih cabang (ya/tidak) saat menambah cabang.
+- `tk.Toplevel` — dialog Tambah/Edit, window Pandu Pesan & Traversal.
+- `tkinter.messagebox` — konfirmasi, info, peringatan versi Tk.
+- `tk.StringVar` — binding widget ↔ state Python.
 
 ## Catatan Teknis
 
-- **`FILE_DATA` di-anchor ke `__file__`** (bukan path relatif), jadi aman
-  dijalankan dari direktori mana pun.
-- **Pemuatan data pakai `ast.literal_eval`** (bukan `exec`) — lebih aman karena
-  file hanya boleh berisi literal, bukan kode arbitrer.
-- **Serialisasi urutan preorder:** saat dimuat ulang, kontak disisipkan dengan
-  urutan yang sama sehingga **bentuk pohon ter-rekonstruksi persis**.
-- **Guard versi Tk** di `main.py` memperingatkan kalau Tk < 8.6 (penyebab
-  jendela hitam di macOS baru).
-- Ini **BST sederhana** (belum self-balancing seperti AVL) — sesuai cakupan
-  materi binary tree dasar.
+- **`FILE_DATA` di-anchor ke `__file__`** — aman dijalankan dari folder mana pun.
+- **Pemuatan data pakai `ast.literal_eval`** (bukan `exec`) — lebih aman.
+- **Serialisasi nested dict** merekam cabang `ya`/`tidak` tiap node, jadi bentuk
+  pohon ter-rekonstruksi persis saat dimuat ulang.
+- **Guard versi Tk** memperingatkan kalau Tk < 8.6 (penyebab jendela hitam di
+  macOS baru).

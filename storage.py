@@ -1,64 +1,70 @@
 """
 storage.py
-Simpan/muat BST kontak ke file Python (kontak.py).
+Simpan/muat pohon keputusan ke file Python (menu.py).
 
-Trik penting: BST disimpan sebagai list ber-urutan PREORDER. Saat dimuat,
-kontak disisipkan kembali satu per satu dengan urutan yang sama. Karena
-preorder memproses akar sebelum anak, hasil rekonstruksinya PERSIS sama
-dengan bentuk pohon semula (tidak berubah/menggepeng).
+Beda dengan BST, bentuk pohon keputusan ditentukan manual (bukan dari
+urutan key), jadi disimpan sebagai NESTED DICT yang merekam ya/tidak tiap
+node secara eksplisit.
 
 Data dibaca pakai ast.literal_eval (bukan exec) supaya aman — file hanya
-boleh berisi literal Python, bukan kode yang bisa dieksekusi.
+boleh berisi literal Python.
 """
 
 import ast
 import os
 from pprint import pformat
 
-from tree import sisip, preorder
+from tree import Node
 
 
-def to_list(akar):
-    """Serialisasi BST -> list dict {nama, nomor, kategori} urutan preorder."""
-    return [
-        {"nama": n.nama, "nomor": n.nomor, "kategori": n.kategori}
-        for n in preorder(akar)
-    ]
+def to_dict(node):
+    """Konversi Node (beserta keturunannya) jadi nested dict."""
+    if node is None:
+        return None
+    return {
+        "teks": node.teks,
+        "harga": node.harga,
+        "deskripsi": node.deskripsi,
+        "ya": to_dict(node.ya),
+        "tidak": to_dict(node.tidak),
+    }
 
 
-def from_list(items):
-    """Rebuild BST dari list (disisipkan sesuai urutan list)."""
-    akar = None
-    for it in items:
-        akar, _ = sisip(akar, it["nama"], it.get("nomor", ""), it.get("kategori", ""))
-    return akar
+def from_dict(d):
+    """Rebuild pohon dari nested dict. Return root Node atau None."""
+    if d is None:
+        return None
+    node = Node(d["teks"], harga=d.get("harga"), deskripsi=d.get("deskripsi", ""))
+    node.ya = from_dict(d.get("ya"))
+    node.tidak = from_dict(d.get("tidak"))
+    return node
 
 
 def simpan(akar, path):
-    """Tulis BST ke file Python berisi `kontak = [...]` (preorder)."""
-    items = to_list(akar)
-    formatted = pformat(items, indent=4, sort_dicts=False, width=100)
+    """Tulis pohon ke file Python berisi `menu = {...}`."""
+    data = to_dict(akar)
+    formatted = pformat(data, indent=4, sort_dicts=False, width=100)
     with open(path, "w", encoding="utf-8") as f:
-        f.write("# File auto-generated oleh Buku Telepon (BST).\n")
-        f.write("# Urutan list = PREORDER, jangan diacak agar bentuk pohon tetap.\n\n")
-        f.write(f"kontak = {formatted}\n")
+        f.write("# File auto-generated oleh Pemandu Pesan Menu (pohon keputusan).\n")
+        f.write("# Struktur pohon biner: tiap node punya cabang 'ya' & 'tidak'.\n\n")
+        f.write(f"menu = {formatted}\n")
 
 
 def muat(path):
-    """Muat BST dari file. Return akar Node atau None bila file tidak ada/rusak."""
+    """Muat pohon dari file. Return root Node atau None bila tidak ada/rusak."""
     if not os.path.exists(path):
         return None
     with open(path, "r", encoding="utf-8") as f:
         src = f.read()
 
-    marker = "kontak ="
+    marker = "menu ="
     idx = src.find(marker)
     if idx == -1:
         return None
     try:
         # .strip() penting: buang spasi/newline di depan agar literal_eval
         # tidak salah mengira ada indentasi ilegal.
-        items = ast.literal_eval(src[idx + len(marker):].strip())
+        data = ast.literal_eval(src[idx + len(marker):].strip())
     except (ValueError, SyntaxError):
         return None
-    return from_list(items)
+    return from_dict(data)
